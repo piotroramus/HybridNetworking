@@ -1,25 +1,48 @@
 ---
 -   hosts: all
-    become: true
-    remote_user: vagrant
     vars:
-        http_port: 80
-        max_clients: 200
+        user: vagrant
+        contiv_version: 1.0.1
+    become: true
+    remote_user: "{{ user }}"
     tasks:
       - name: ensure yum-utils is installed
         yum:
             name: yum-utils
             state: latest
+
       - name: add docker repo
         shell: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
 
-        # yum_repository:
-            # name: docker-ce.repo
-            # enabled: yes
-            # baseurl: https://packages.docker.com/1.10/yum/repo/main/centos/7
-            # include: https://download.docker.com/linux/centos/docker-ce.repo
-            # description: repository for installing docker
       - name: install docker
         yum:
             name: docker-ce
             update_cache: yes
+            state: present
+
+      - name: ensure user is in the docker group
+        user:
+            name: vagrant
+            groups: docker
+
+      - name: start docker service
+        service:
+            name: docker
+            state: started
+
+      - name: ensure that directory for contiv installer exists
+        file:
+            path: /home/{{ user }}/contiv-installer
+            state: directory
+
+      - name: download contiv installer
+        get_url:
+            url: https://github.com/contiv/install/releases/download/{{ contiv_version }}/contiv-{{ contiv_version }}.tgz
+            dest: /home/{{ user }}/contiv-installer/contiv-{{ contiv_version }}.tgz
+
+      - name: extract downloaded archive
+        unarchive:
+            remote_src: true
+            src: /home/{{ user }}/contiv-installer/contiv-{{ contiv_version }}.tgz
+            dest: /home/{{ user }}/contiv-installer/
+
