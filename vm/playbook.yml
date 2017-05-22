@@ -1,0 +1,25 @@
+---
+-   hosts: all
+    become: true
+    remote_user: vagrant
+    vars:
+        http_port: 80
+        max_clients: 200
+    tasks:
+      - name: ensure yum-utils is installed
+        yum:
+            name: yum-utils
+            state: latest
+      - name: add docker repo
+        shell: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+
+        # yum_repository:
+            # name: docker-ce.repo
+            # enabled: yes
+            # baseurl: https://packages.docker.com/1.10/yum/repo/main/centos/7
+            # include: https://download.docker.com/linux/centos/docker-ce.repo
+            # description: repository for installing docker
+      - name: install docker
+        yum:
+            name: docker-ce
+            update_cache: yes
